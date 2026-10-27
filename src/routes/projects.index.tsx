@@ -6,12 +6,12 @@ import { useQuickCreate } from "@/components/studio/AppShell";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type Search = { division?: Division; status?: ProjectStatus };
+type Search = { division?: Division | undefined; status?: ProjectStatus | undefined };
 
 export const Route = createFileRoute("/projects/")({
   validateSearch: (s: Record<string, unknown>): Search => ({
-    division: ["wedding", "website", "ml"].includes(s.division as string) ? (s.division as Division) : undefined,
-    status: (s.status as string) in STATUSES ? (s.status as ProjectStatus) : undefined,
+    division: ["wedding", "website", "ml"].includes(s["division"] as string) ? (s["division"] as Division) : undefined,
+    status: (s["status"] as string) in STATUSES ? (s["status"] as ProjectStatus) : undefined,
   }),
   head: () => ({
     meta: [
