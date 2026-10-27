@@ -1,0 +1,376 @@
+# Khaiju Studio Ledger — Continue Existing Project
+
+You are continuing development of my existing project, **Khaiju Studio Ledger**, a business management dashboard for Khaiju Studio, a software development studio.
+
+GitHub repository:
+https://github.com/biyamkhaiju/khaiju-studio-ledger
+
+The project has already been partially developed. Your task is to inspect the existing codebase, understand what has been implemented, identify incomplete features, and continue development from the current state.
+
+**CRITICAL: DO NOT rebuild the application from scratch. DO NOT replace working components unnecessarily. Preserve the existing design, architecture, components, routes, and working functionality.**
+
+## 1. FIRST: AUDIT THE EXISTING PROJECT
+
+Before modifying any code:
+
+1. Inspect the existing source code, package.json, routes, components, configuration files, and installed dependencies.
+2. Identify the existing dashboard layout and design system.
+3. Determine which pages and features are implemented, partially implemented, or missing.
+4. Check whether Supabase or another backend is already configured.
+5. Identify any mock data, hardcoded dashboard statistics, placeholder buttons, incomplete forms, or nonfunctional interactions.
+6. Check for existing authentication, database schemas, migrations, environment variables, and API integrations.
+7. Check the application for compilation errors and obvious runtime issues.
+
+Do not assume a feature is missing until you have inspected the existing implementation.
+
+Provide a concise progress report before proceeding:
+
+* Completed features
+* Partially completed features
+* Missing features
+* Backend status
+* Critical bugs
+* Recommended implementation order
+
+Then continue development using the existing codebase.
+
+## 2. PRESERVE THE EXISTING DESIGN
+
+Maintain the existing Khaiju Studio Ledger branding and visual style.
+
+Design requirements:
+
+* Premium, professional dark dashboard.
+* Navy and dark slate backgrounds.
+* Clean cards, subtle borders, appropriate spacing, and clear typography.
+* Consistent sidebar navigation.
+* Responsive desktop, tablet, and mobile layouts.
+* Functional tables, charts, forms, progress indicators, and navigation.
+* Clear visual distinction between completed, ongoing, delayed, and upcoming work.
+
+Do not redesign the entire application unless a specific existing component is broken or the change is necessary.
+
+Avoid unnecessary animations, excessive gradients, clutter, and decorative elements that reduce usability.
+
+## 3. BUILD A REAL BACKEND
+
+First determine whether a backend already exists.
+
+If Supabase is already configured, inspect and reuse its existing schema, authentication, and integrations wherever appropriate.
+
+If no backend exists, use Supabase with PostgreSQL for:
+
+* Database
+* Authentication
+* File storage
+* Row Level Security
+* Server-side operations where necessary
+
+Do not create a second database or duplicate tables unnecessarily.
+
+Never expose Supabase service-role keys, private API keys, or other secrets in frontend code.
+
+If backend configuration requires my intervention, explain exactly what I need to configure.
+
+## 4. CORE BUSINESS MODULES
+
+Implement the following modules, reusing existing pages and components wherever possible.
+
+### A. Dashboard
+
+Display real data from the database:
+
+* Total active projects
+* Total clients
+* Total contract value
+* Payments received
+* Outstanding payments
+* Business expenses
+* Revenue and profit summaries
+* Project completion percentages
+* Overdue tasks
+* Upcoming deadlines
+* Recent activities
+
+Add useful charts for:
+
+* Monthly revenue
+* Monthly expenses
+* Profit trends
+* Project status distribution
+* Project completion
+
+All statistics must be calculated from actual records, not hardcoded sample values.
+
+Display appropriate empty states when no data exists.
+
+### B. Client Management
+
+Allow users to:
+
+* Create clients
+* Edit client details
+* View client profiles
+* Store contact information
+* Associate clients with projects
+* View a client's contracts, invoices, payments, and project history
+* Search and filter clients
+
+Validate required fields and prevent accidental data loss.
+
+### C. Project Management
+
+Support different project categories:
+
+* Wedding invitation websites
+* Business and company websites
+* Machine learning and deep learning projects
+* Internal research and development
+* Other custom software projects
+
+Each project should support:
+
+* Project name
+* Client
+* Category
+* Description
+* Start date
+* Deadline
+* Project status
+* Contract value
+* Payment records
+* Expenses
+* Milestones
+* Tasks
+* Completion percentage
+* Notes and attachments
+
+Use a clearly defined progress calculation method. For example, calculate progress from completed milestones or weighted tasks rather than assigning arbitrary percentages.
+
+Allow manual progress overrides only if the existing design requires them, and make the calculation method clear.
+
+### D. Contracts and Deals
+
+Track:
+
+* Contract title
+* Associated client
+* Associated project
+* Agreed contract value
+* Agreement date
+* Delivery deadline
+* Contract status
+* Notes
+* Contract documents
+
+Keep contract values separate from actual cash received.
+
+Do not count an unsigned proposal as earned revenue or a payment as received before it has been recorded and verified.
+
+### E. Payments and Invoices
+
+Implement:
+
+* Invoice creation
+* Invoice numbers
+* Invoice issue dates
+* Due dates
+* Invoice line items
+* Payment recording
+* Partial payments
+* Payment history
+* Outstanding balances
+* Paid, partially paid, overdue, and draft statuses
+
+Use the following calculation:
+
+Outstanding balance = Invoice total − Payments allocated to that invoice.
+
+Prevent duplicate payment records and validate payment amounts.
+
+Make it possible to associate invoices with clients and projects.
+
+### F. Expense Management
+
+Allow recording:
+
+* Expense title
+* Amount
+* Date
+* Category
+* Associated project, if applicable
+* Vendor or recipient
+* Payment method
+* Receipt or attachment
+* Notes
+
+Support searching, filtering, editing, and deleting expenses with appropriate safeguards.
+
+Keep project-specific expenses distinguishable from general business expenses.
+
+### G. Tasks and Deadlines
+
+Implement:
+
+* Task creation
+* Task assignment
+* Priority
+* Due date
+* Status
+* Associated project
+* Description
+* Completion tracking
+
+Provide views for pending, completed, and overdue tasks.
+
+Make task status changes immediately visible throughout the application.
+
+### H. Research and Development
+
+Create or complete a dedicated R&D section for internal experiments and technical research.
+
+Support:
+
+* Research project title
+* Research category
+* Objective
+* Hypothesis or problem statement
+* Technologies used
+* Current status
+* Experiments
+* Milestones
+* Tasks
+* Findings
+* Documentation
+* Related files
+* Progress percentage
+
+Allow internal R&D projects to exist without a client or contract.
+
+### I. Reports and Analytics
+
+Create reports based on real database records.
+
+Include:
+
+* Revenue by month
+* Expenses by month
+* Outstanding invoices
+* Payments received
+* Project profitability
+* Client-level financial summaries
+* Project status and completion reports
+
+Clearly distinguish contract value, invoiced amounts, collected cash, outstanding receivables, and expenses.
+
+Do not label revenue minus expenses as accounting profit without considering applicable accounting rules and the distinction between cash and accrual accounting.
+
+## 5. FINANCIAL ACCURACY
+
+Use Nepalese rupees (NPR) as the default currency.
+
+Display amounts consistently, for example: NPR 20,000.
+
+Use appropriate date formatting and timezone handling for Nepal.
+
+Implement reliable calculations for:
+
+* Contract value
+* Invoiced amounts
+* Payments received
+* Outstanding balances
+* Project expenses
+* Business expenses
+* Cash-flow summaries
+* Project-level profitability estimates
+
+Prevent duplicate counting when multiple invoices, payments, projects, or expense records are related.
+
+Use appropriate decimal handling for financial values and validate all financial inputs.
+
+Clearly label estimates and distinguish them from actual recorded financial results.
+
+## 6. SECURITY AND DATA INTEGRITY
+
+Implement appropriate security controls:
+
+* Authentication for protected pages
+* Secure database access
+* Row Level Security policies
+* Ownership or role-based access where appropriate
+* Form validation
+* Safe error handling
+* Protection against unauthorized record access
+* Server-side validation for sensitive operations
+
+Do not expose private records to unauthenticated users.
+
+Do not delete existing data, database tables, migrations, or configurations merely to simplify implementation.
+
+If schema changes are needed, use safe, incremental migrations.
+
+## 7. QUALITY ASSURANCE
+
+After implementation:
+
+1. Run the available build and type-check commands.
+2. Fix TypeScript errors and compilation failures introduced by your changes.
+3. Check that routes and navigation work.
+4. Test form validation and CRUD operations.
+5. Verify that records persist after refreshing the browser.
+6. Verify dashboard totals against the underlying records.
+7. Test partial payments and outstanding balance calculations.
+8. Test empty states and loading states.
+9. Check responsive layouts.
+10. Identify any remaining configuration requirements.
+
+Do not claim that a feature works unless you have verified it.
+
+## 8. DEVELOPMENT PRIORITIES
+
+Work in this order:
+
+Priority 1:
+
+* Inspect the current project
+* Preserve existing working functionality
+* Fix critical build errors
+* Verify the backend and database status
+
+Priority 2:
+
+* Complete authentication and database integration
+* Make existing dashboard data dynamic
+* Complete clients and projects
+
+Priority 3:
+
+* Complete invoices, payments, and expenses
+* Verify financial calculations
+
+Priority 4:
+
+* Complete tasks, deadlines, and R&D
+* Complete reports and analytics
+
+Priority 5:
+
+* Improve responsiveness, error handling, accessibility, and final polish
+
+If your available context or credits are insufficient to complete everything, do not attempt a rushed rewrite.
+
+Finish the current priority cleanly, preserve working code, and provide a progress report identifying:
+
+* What was completed
+* What remains
+* Which files were changed
+* Any migrations or configuration required
+* The exact next step for continuing development
+
+## FINAL REQUIREMENT
+
+The result must be a functional business management application, not merely a visual prototype.
+
+Prioritize reliable business logic, persistent data, accurate financial calculations, and maintainable code over adding unnecessary features.
+
+Start by auditing the existing project, then continue from its current state.

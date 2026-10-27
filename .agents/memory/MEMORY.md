@@ -1,0 +1,1 @@
+- [Khaiju Studio Ledger direction](ledger-product-direction.md) — preserve its existing product, architecture, and visual identity; use NPR and Nepal timezone.

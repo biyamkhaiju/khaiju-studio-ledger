@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Khaiju Studio Ledger"
+description = "A business management dashboard for Khaiju Studio to manage clients, projects, payments, expenses, and studio activity."
+version = "1.0.0"
+id = "artifacts/khaiju-studio-ledger"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22626
+
+[services.development]
+run = "pnpm --filter @workspace/khaiju-studio-ledger run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/khaiju-studio-ledger", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/khaiju-studio-ledger/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22626"
+BASE_PATH = "/"
