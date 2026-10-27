@@ -1,4 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { Session, SupabaseClient } from "@supabase/supabase-js";
+import { Button } from "@/components/ui/button";
+import { AuthScreen } from "@/components/studio/AuthScreen";
+import { loadWorkspace, loadWorkspaceData, persistDataDiff, type WorkspaceInfo } from "./data-sync";
+import { createSupabaseClient, isSupabaseConfigured } from "./supabase";
 
 export type Division = "wedding" | "website" | "ml";
 export type ProjectStatus = "planning" | "in_progress" | "in_review" | "completed" | "on_hold" | "cancelled";
@@ -11,8 +16,9 @@ export interface Client {
   phone: string;
   location: string;
   createdAt: string;
+  createdBy?: string;
 }
-export interface Milestone { id: string; title: string; done: boolean }
+export interface Milestone { id: string; title: string; done: boolean; createdBy?: string }
 export interface Project {
   id: string;
   name: string;
@@ -25,10 +31,11 @@ export interface Project {
   description: string;
   milestones: Milestone[];
   manualProgress: number;
+  createdBy?: string;
 }
-export interface Payment { id: string; projectId: string; amount: number; date: string; note: string }
-export interface Expense { id: string; projectId: string | null; category: string; amount: number; date: string; note: string }
-export interface Activity { id: string; text: string; date: string }
+export interface Payment { id: string; projectId: string; amount: number; date: string; note: string; createdBy?: string }
+export interface Expense { id: string; projectId: string | null; category: string; amount: number; date: string; note: string; createdBy?: string }
+export interface Activity { id: string; text: string; date: string; createdBy?: string }
 
 export interface Data {
   clients: Client[];
@@ -52,10 +59,25 @@ export const STATUSES: Record<ProjectStatus, string> = {
   cancelled: "Cancelled",
 };
 
-export const uid = () => Math.random().toString(36).slice(2, 10);
+export const uid = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2, 14);
+
+export function todayInNepal(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kathmandu",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const part = (type: string) => parts.find((value) => value.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
 const day = (offset: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
+  const [year, month, date] = todayInNepal().split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, date + offset));
   return d.toISOString().slice(0, 10);
 };
 const ms = (titles: string[], doneCount: number): Milestone[] =>
@@ -116,60 +138,261 @@ export const outstandingFor = (d: Data, p: Project) =>
   p.status === "cancelled" ? 0 : Math.max(0, p.budget - paidFor(d, p.id));
 
 export const isOverdue = (p: Project) =>
-  p.status !== "completed" && p.status !== "cancelled" && p.deadline < new Date().toISOString().slice(0, 10);
+  p.status !== "completed" && p.status !== "cancelled" && p.deadline < todayInNepal();
 
 export const daysUntil = (date: string) =>
-  Math.ceil((new Date(date + "T00:00:00").getTime() - new Date(new Date().toISOString().slice(0, 10) + "T00:00:00").getTime()) / 86400e3);
+  Math.ceil((Date.parse(`${date}T00:00:00Z`) - Date.parse(`${todayInNepal()}T00:00:00Z`)) / 86400e3);
 
 export type RangeKey = "week" | "month" | "quarter" | "year";
 export function rangeStart(r: RangeKey): string {
-  const d = new Date();
-  if (r === "week") d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  if (r === "month") d.setDate(1);
-  if (r === "quarter") { d.setMonth(Math.floor(d.getMonth() / 3) * 3); d.setDate(1); }
-  if (r === "year") { d.setMonth(0); d.setDate(1); }
+  const [year, month, date] = todayInNepal().split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, date));
+  if (r === "week") d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  if (r === "month") d.setUTCDate(1);
+  if (r === "quarter") { d.setUTCMonth(Math.floor(d.getUTCMonth() / 3) * 3); d.setUTCDate(1); }
+  if (r === "year") { d.setUTCMonth(0); d.setUTCDate(1); }
   return d.toISOString().slice(0, 10);
 }
 
 export const npr = (n: number) => "NPR " + n.toLocaleString("en-IN");
 
 // ---------- store ----------
-const KEY = "khaiju-studio-data-v1";
+const KEY = "khaiju-studio-preview-data-v1";
+const emptyData = (): Data => ({ clients: [], projects: [], payments: [], expenses: [], activity: [] });
+
+export interface SignedInUser {
+  id: string;
+  email: string;
+  fullName: string;
+}
+
 interface Store {
   data: Data;
   set: (fn: (d: Data) => Data) => void;
   log: (text: string) => void;
   reset: () => void;
+  mode: "preview" | "remote";
+  user: SignedInUser | null;
+  workspace: WorkspaceInfo | null;
+  syncError: string;
+  signOut: () => Promise<void>;
 }
+
 const Ctx = createContext<Store | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<Data>(seedData);
-  const [loaded, setLoaded] = useState(false);
+  const [client, setClient] = useState<SupabaseClient | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [previewMode, setPreviewMode] = useState(false);
+  const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
+  const [data, setData] = useState<Data>(emptyData);
+  const [loadingWorkspace, setLoadingWorkspace] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [syncError, setSyncError] = useState("");
+  const [reloadCount, setReloadCount] = useState(0);
+  const dataRef = useRef<Data>(emptyData());
+  const writeQueue = useRef<Promise<void>>(Promise.resolve());
+
   useEffect(() => {
+    const supabase = createSupabaseClient();
+    if (!supabase) {
+      setAuthReady(true);
+      return;
+    }
+    setClient(supabase);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthReady(true);
+      if (nextSession) setPreviewMode(false);
+    });
+    void supabase.auth.getSession().then(({ data: result, error }) => {
+      if (error) setAuthError(error.message);
+      setSession(result.session);
+      setAuthReady(true);
+    }).catch((error: unknown) => {
+      setAuthError(error instanceof Error ? error.message : "Could not check your sign-in session.");
+      setAuthReady(true);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!session) {
+      setWorkspace(null);
+      setLoadingWorkspace(false);
+      if (!previewMode) {
+        const empty = emptyData();
+        dataRef.current = empty;
+        setData(empty);
+      }
+      return;
+    }
+    if (!client || previewMode) return;
+
+    let active = true;
+    setLoadingWorkspace(true);
+    setLoadError("");
+    setSyncError("");
+    setWorkspace(null);
+    const empty = emptyData();
+    dataRef.current = empty;
+    setData(empty);
+
+    void (async () => {
+      try {
+        const nextWorkspace = await loadWorkspace(client);
+        const nextData = await loadWorkspaceData(client, nextWorkspace.id);
+        if (!active) return;
+        setWorkspace(nextWorkspace);
+        dataRef.current = nextData;
+        setData(nextData);
+      } catch (error) {
+        if (!active) return;
+        setLoadError(error instanceof Error ? error.message : "Could not load your workspace.");
+      } finally {
+        if (active) setLoadingWorkspace(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [client, session?.user.id, previewMode, reloadCount]);
+
+  const enterPreview = () => {
+    let next = seedData();
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setData(JSON.parse(raw));
-    } catch {}
-    setLoaded(true);
-  }, []);
-  useEffect(() => {
-    if (loaded) localStorage.setItem(KEY, JSON.stringify(data));
-  }, [data, loaded]);
-  const value = useMemo<Store>(
-    () => ({
-      data,
-      set: (fn) => setData((d) => fn(d)),
-      log: (text) => setData((d) => ({ ...d, activity: [{ id: uid(), text, date: new Date().toISOString() }, ...d.activity].slice(0, 50) })),
-      reset: () => setData(seedData()),
+      if (raw) {
+        const parsed = JSON.parse(raw) as Data;
+        if (Array.isArray(parsed.clients) && Array.isArray(parsed.projects)) next = parsed;
+      }
+    } catch {
+      next = seedData();
+    }
+    dataRef.current = next;
+    setData(next);
+    setWorkspace(null);
+    setSyncError("");
+    setPreviewMode(true);
+  };
+
+  const commit = (next: Data) => {
+    const previous = dataRef.current;
+    dataRef.current = next;
+    setData(next);
+
+    if (previewMode) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(next));
+        setSyncError("");
+      } catch {
+        setSyncError("This browser could not save the preview data.");
+      }
+      return;
+    }
+
+    if (!client || !session || !workspace) return;
+    const userId = session.user.id;
+    const workspaceId = workspace.id;
+    writeQueue.current = writeQueue.current
+      .catch(() => undefined)
+      .then(() => persistDataDiff(client, workspaceId, userId, previous, next))
+      .then(() => setSyncError(""))
+      .catch((error: unknown) => {
+        setSyncError(error instanceof Error ? error.message : "Could not save changes to Supabase.");
+      });
+  };
+
+  const user: SignedInUser | null = session
+    ? {
+        id: session.user.id,
+        email: session.user.email ?? "",
+        fullName: String(session.user.user_metadata?.full_name ?? ""),
+      }
+    : null;
+
+  const value: Store = {
+    data,
+    set: (fn) => commit(fn(dataRef.current)),
+    log: (text) => commit({
+      ...dataRef.current,
+      activity: [{ id: uid(), text, date: new Date().toISOString() }, ...dataRef.current.activity].slice(0, 100),
     }),
-    [data],
-  );
+    reset: () => {
+      if (previewMode) commit(seedData());
+    },
+    mode: previewMode ? "preview" : "remote",
+    user,
+    workspace,
+    syncError,
+    signOut: async () => {
+      if (!client) return;
+      const { error } = await client.auth.signOut();
+      if (error) setSyncError(error.message);
+      setPreviewMode(false);
+    },
+  };
+
+  if (!isSupabaseConfigured) {
+    return (
+      <StatusScreen title="Supabase setup needed">
+        Add the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY values to this app's Replit Secrets, then restart the preview.
+      </StatusScreen>
+    );
+  }
+  if (!client || !authReady) {
+    return <StatusScreen title="Connecting to Khaiju Studio">Checking your sign-in session…</StatusScreen>;
+  }
+  if (authError && !session) {
+    return (
+      <StatusScreen title="Could not connect to Supabase">
+        {authError}
+      </StatusScreen>
+    );
+  }
+  if (!session && !previewMode) {
+    return <AuthScreen client={client} onPreview={enterPreview} />;
+  }
+  if (session && loadingWorkspace) {
+    return <StatusScreen title="Opening your workspace">Loading your private studio records…</StatusScreen>;
+  }
+  if (session && loadError) {
+    return (
+      <StatusScreen title="Finish setting up the database">
+        <p>{loadError}</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Run <span className="font-mono text-foreground">supabase/migrations/20261027_initial_schema.sql</span> in your Supabase SQL Editor, then retry.
+        </p>
+        <div className="mt-5 flex justify-center gap-2">
+          <Button onClick={() => setReloadCount((count) => count + 1)}>Retry</Button>
+          <Button variant="secondary" onClick={() => void value.signOut()}>Sign out</Button>
+        </div>
+      </StatusScreen>
+    );
+  }
+  if (session && !workspace) {
+    return <StatusScreen title="Opening your workspace">Loading workspace details…</StatusScreen>;
+  }
+
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+function StatusScreen({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+      <section className="w-full max-w-lg rounded-2xl border border-border bg-panel p-7 text-center shadow-2xl shadow-black/20">
+        <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
+          <span className="text-lg font-bold">K</span>
+        </div>
+        <h1 className="text-xl font-semibold">{title}</h1>
+        <div className="mt-2 text-sm text-muted-foreground">{children}</div>
+      </section>
+    </main>
+  );
+}
+
 export function useStore() {
-  const s = useContext(Ctx);
-  if (!s) throw new Error("useStore outside provider");
-  return s;
+  const store = useContext(Ctx);
+  if (!store) throw new Error("useStore outside provider");
+  return store;
 }
