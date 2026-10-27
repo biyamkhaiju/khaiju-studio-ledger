@@ -73,9 +73,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function Sidebar({ onClose }: { onClose: () => void }) {
   const loc = useRouterState({ select: (s) => s.location });
-  const division = (loc.search as Record<string, string>).division;
+  const division = (loc.search as Record<string, string>)["division"];
   const isActive = (it: { to?: string; search?: Record<string, string> }) =>
-    it.to === "/" ? loc.pathname === "/" : !!it.to && loc.pathname === it.to && (!it.search || it.search.division === division);
+    it.to === "/" ? loc.pathname === "/" : !!it.to && loc.pathname === it.to && (!it.search || it.search["division"] === division);
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   return (
