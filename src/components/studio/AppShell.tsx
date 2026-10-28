@@ -2,13 +2,14 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type R
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Heart, Globe, BrainCircuit, FlaskConical, Users, Wallet, Image, CalendarDays, Settings,
-  ChevronDown, Search, Bell, Plus, Menu, X, Mountain,
+  ChevronDown, Search, Bell, Plus, Menu, X, Mountain, Sun, Moon,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { QuickCreateDialog, type CreateKind } from "./QuickCreate";
 import { useStore, isOverdue, daysUntil } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme";
 
 type Item = { label: string; to: string; search?: Record<string, string> };
 type Group = { label: string; icon: typeof Heart; to?: string; items?: Item[] };
@@ -93,7 +94,7 @@ function Sidebar({ onClose }: { onClose: () => void }) {
           const Icon = g.icon;
           if (!g.items) {
             return (
-              <Link key={g.label} to={g.to!} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent/60", isActive(g) && "bg-sidebar-accent font-medium text-sidebar-accent-foreground")}>
+              <Link key={g.label} to={g.to ?? "/"} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent/60", isActive(g) && "bg-sidebar-accent font-medium text-sidebar-accent-foreground")}>
                 <Icon className="h-4 w-4" /> {g.label}
               </Link>
             );
@@ -128,6 +129,7 @@ function Sidebar({ onClose }: { onClose: () => void }) {
 
 function TopBar({ onMenu, onCreate }: { onMenu: () => void; onCreate: (k: CreateKind) => void }) {
   const { data } = useStore();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [focus, setFocus] = useState(false);
@@ -167,6 +169,9 @@ function TopBar({ onMenu, onCreate }: { onMenu: () => void; onCreate: (k: Create
         )}
       </div>
       <div className="ml-auto flex items-center gap-2">
+        <Button variant="ghost" size="icon" aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="relative rounded-lg p-2 hover:bg-accent" aria-label="Notifications">
@@ -195,10 +200,17 @@ function TopBar({ onMenu, onCreate }: { onMenu: () => void; onCreate: (k: Create
             <DropdownMenuItem onSelect={() => onCreate("expense")}>Expense</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Link to="/settings" className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-accent">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary">BK</span>
-          <span className="hidden text-left leading-tight md:block"><span className="block text-sm">Biyam Khaiju</span><span className="block text-[11px] text-muted-foreground">Founder</span></span>
-        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-auto px-1.5" aria-label="Profile menu">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary">BK</span>
+              <span className="hidden text-left leading-tight md:block"><span className="block text-sm">Biyam Khaiju</span><span className="block text-[11px] text-muted-foreground">Founder</span></span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => navigate({ to: "/settings" })}>Profile settings</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );
