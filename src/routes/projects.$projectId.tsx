@@ -15,6 +15,8 @@ export const Route = createFileRoute("/projects/$projectId")({
       { name: "description", content: "Project milestones, finances and status." },
       { property: "og:title", content: "Project details — Khaiju Studio" },
       { property: "og:description", content: "Project milestones, finances and status." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ProjectPage,

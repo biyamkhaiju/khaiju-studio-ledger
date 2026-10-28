@@ -14,6 +14,8 @@ export const Route = createFileRoute("/clients")({
       { name: "description", content: "Every Khaiju Studio client with their projects and balances." },
       { property: "og:title", content: "Clients — Khaiju Studio" },
       { property: "og:description", content: "Every Khaiju Studio client with their projects and balances." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Clients,

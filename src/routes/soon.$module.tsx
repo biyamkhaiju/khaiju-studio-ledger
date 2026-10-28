@@ -8,6 +8,8 @@ export const Route = createFileRoute("/soon/$module")({
       { name: "description", content: "This Khaiju Studio module is scheduled for an upcoming phase." },
       { property: "og:title", content: "Coming next — Khaiju Studio" },
       { property: "og:description", content: "This Khaiju Studio module is scheduled for an upcoming phase." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Soon,

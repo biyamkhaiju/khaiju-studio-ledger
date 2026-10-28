@@ -19,6 +19,8 @@ export const Route = createFileRoute("/projects/")({
       { name: "description", content: "All wedding, website and ML/DL projects with progress, value and deadlines." },
       { property: "og:title", content: "Projects — Khaiju Studio" },
       { property: "og:description", content: "All wedding, website and ML/DL projects with progress, value and deadlines." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Projects,
