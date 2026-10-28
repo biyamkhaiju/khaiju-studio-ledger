@@ -14,6 +14,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Khaiju Studio command center: projects, progress, revenue and deadlines at a glance." },
       { property: "og:title", content: "Dashboard — Khaiju Studio" },
       { property: "og:description", content: "Khaiju Studio command center: projects, progress, revenue and deadlines at a glance." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Dashboard,

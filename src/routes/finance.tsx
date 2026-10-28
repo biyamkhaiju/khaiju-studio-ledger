@@ -11,6 +11,8 @@ export const Route = createFileRoute("/finance")({
       { name: "description", content: "Contracted, received, outstanding, expenses and profit per project in NPR." },
       { property: "og:title", content: "Finance — Khaiju Studio" },
       { property: "og:description", content: "Contracted, received, outstanding, expenses and profit per project in NPR." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Finance,
