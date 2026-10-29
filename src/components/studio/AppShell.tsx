@@ -47,6 +47,7 @@ const QCtx = createContext<(k: CreateKind) => void>(() => {});
 export const useQuickCreate = () => useContext(QCtx);
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { storageError, loaded, retry, downloadOriginal } = useStore();
   const [create, setCreate] = useState<CreateKind | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.href });
@@ -64,10 +65,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         {mobileOpen && <div className="fixed inset-0 z-30 bg-background/70 lg:hidden" onClick={() => setMobileOpen(false)} />}
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar onMenu={() => setMobileOpen(true)} onCreate={setCreate} />
-          <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-warning/10 px-4 py-2 text-xs md:px-8" role="status">
+            <span className="text-warning">Database not connected · These records belong to this browser only.</span>
+            <Link to="/settings" className="font-medium text-foreground underline underline-offset-4">Data & backup</Link>
+          </div>
+          {storageError && <div role="alert" className="space-y-3 border-b border-border bg-danger/10 px-4 py-4 md:px-8">
+            <p className="text-sm text-danger">{storageError}</p>
+            <div className="flex flex-wrap gap-2"><Button variant="secondary" size="sm" onClick={downloadOriginal}>Download original copy</Button><Button variant="outline" size="sm" onClick={retry}>Retry</Button></div>
+          </div>}
+          <main className="flex-1 px-4 py-6 md:px-8">{!loaded ? <p role="status" className="text-sm text-muted-foreground">Loading saved browser records…</p> : storageError ? <p className="text-sm text-muted-foreground">Editing is paused to protect your records.</p> : children}</main>
         </div>
       </div>
-      <QuickCreateDialog kind={create} onClose={() => setCreate(null)} />
+      <QuickCreateDialog kind={loaded && !storageError ? create : null} onClose={() => setCreate(null)} />
     </QCtx.Provider>
   );
 }

@@ -46,10 +46,11 @@ function SettingsPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" onClick={() => {
             const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
-            const a = document.createElement("a"); a.href = url; a.download = "khaiju-studio-backup.json"; a.click();
+            const a = document.createElement("a"); a.href = url; a.download = "khaiju-browser-records.json"; a.click();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
-          }}><Download className="h-4 w-4" />Download backup</Button>
+          }}><Download className="h-4 w-4" />Export browser records</Button>
         </div>
+        <p className="text-xs text-muted-foreground">This export contains only this browser’s records, not a complete database backup.</p>
       </section>
     </div>
   );
