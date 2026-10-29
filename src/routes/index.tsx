@@ -107,10 +107,10 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <section className="panel p-5 xl:col-span-2">
+        <section className="panel min-w-0 p-5 xl:col-span-2">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-semibold">Recent projects</h2>
-            <div className="flex gap-1 text-xs">
+            <div className="flex flex-wrap gap-1 text-xs">
               {(["all", "wedding", "website", "ml"] as const).map((t) => (
                 <button key={t} onClick={() => setTab(t)} className={cn("rounded-md px-2.5 py-1", tab === t ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}>{t === "all" ? "All" : DIVISIONS[t].short}</button>
               ))}
@@ -121,6 +121,7 @@ function Dashboard() {
             <table className="w-full min-w-[640px] text-sm">
               <thead className="text-left text-xs text-muted-foreground"><tr><th className="pb-2 font-normal">Project</th><th className="pb-2 font-normal">Progress</th><th className="pb-2 font-normal">Value</th><th className="pb-2 font-normal">Deadline</th><th className="pb-2 font-normal">Status</th><th /></tr></thead>
               <tbody>
+                {recent.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No projects yet. <Link to="/projects" className="text-primary">Create your first project</Link></td></tr>}
                 {recent.map((p) => {
                   const pr = progressOf(p);
                   return (
@@ -139,11 +140,11 @@ function Dashboard() {
           </div>
         </section>
 
-        <section className="panel p-5">
+        <section className="panel min-w-0 p-5">
           <h2 className="font-semibold">Revenue received</h2>
           <p className="text-xs text-muted-foreground">Last 6 months by division</p>
           <div className="mt-4 h-56">
-            <ResponsiveContainer>
+            {data.payments.length === 0 ? <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No payments recorded yet.</div> : <ResponsiveContainer>
               <AreaChart data={chart} margin={{ left: -10, right: 4 }}>
                 <CartesianGrid stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="m" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
@@ -153,7 +154,7 @@ function Dashboard() {
                 <Area type="monotone" dataKey="website" name="Website" stackId="1" stroke="var(--website)" fill="var(--website)" fillOpacity={0.25} />
                 <Area type="monotone" dataKey="ml" name="ML/DL" stackId="1" stroke="var(--ml)" fill="var(--ml)" fillOpacity={0.25} />
               </AreaChart>
-            </ResponsiveContainer>
+            </ResponsiveContainer>}
           </div>
           <div className="mt-3 flex justify-around text-xs">
             {(Object.keys(DIVISIONS) as Division[]).map((d) => <span key={d} className="flex items-center gap-1.5"><span className={cn("h-2 w-2 rounded-full", DIV_STYLE[d].bg)} />{DIVISIONS[d].short}</span>)}
@@ -165,6 +166,7 @@ function Dashboard() {
         <section className="panel p-5">
           <h2 className="mb-3 font-semibold">Needs attention</h2>
           <div className="space-y-3">
+            {deadlines.length === 0 && <p className="text-sm text-muted-foreground">No upcoming project deadlines.</p>}
             {deadlines.map((p) => {
               const dl = daysUntil(p.deadline);
               return (
