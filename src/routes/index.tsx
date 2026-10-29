@@ -26,7 +26,7 @@ const RANGES: { k: RangeKey; l: string }[] = [
 ];
 
 function greeting() {
-  const h = new Date().getHours();
+  const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kathmandu", hour: "2-digit", hourCycle: "h23" }).format(new Date()));
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
@@ -49,7 +49,7 @@ function Dashboard() {
     for (let i = 5; i >= 0; i--) {
       const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
       const key = d.toISOString().slice(0, 7);
-      rows[key] = { m: d.toLocaleString("en", { month: "short" }), wedding: 0, website: 0, ml: 0 };
+      rows[key] = { m: d.toLocaleString("en", { month: "short", timeZone: "UTC" }), wedding: 0, website: 0, ml: 0 };
     }
     data.payments.forEach((x) => { const r = rows[x.date.slice(0, 7)]; const dv = divOf(x.projectId); if (r && dv) r[dv] += x.amount; });
     return Object.values(rows);
@@ -67,7 +67,7 @@ function Dashboard() {
           <p className="mt-1 text-sm text-muted-foreground">Here's what's happening across your studio.</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden text-sm text-muted-foreground sm:block">{now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</span>
+          <span className="hidden text-sm text-muted-foreground sm:block">{now.toLocaleDateString("en-GB", { timeZone: "Asia/Kathmandu", weekday: "short", day: "numeric", month: "short", year: "numeric" })}</span>
           <div className="flex rounded-lg border border-border bg-panel p-0.5">
             {RANGES.map((r) => (
               <button key={r.k} onClick={() => setRange(r.k)} className={cn("rounded-md px-2.5 py-1 text-xs transition-colors", range === r.k ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}>{r.l}</button>
@@ -183,8 +183,9 @@ function Dashboard() {
         <section className="panel p-5">
           <h2 className="mb-3 font-semibold">Recent activity</h2>
           <ul className="space-y-3">
+            {data.activity.length === 0 && <li className="text-sm text-muted-foreground">No activity recorded yet.</li>}
             {data.activity.slice(0, 6).map((a) => (
-              <li key={a.id} className="flex gap-3 text-sm"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" /><div><div>{a.text}</div><div className="text-xs text-muted-foreground">{new Date(a.date).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div></div></li>
+              <li key={a.id} className="flex gap-3 text-sm"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" /><div><div>{a.text}</div><div className="text-xs text-muted-foreground">{new Date(a.date).toLocaleString("en-GB", { timeZone: "Asia/Kathmandu", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div></div></li>
             ))}
           </ul>
         </section>
