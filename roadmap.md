@@ -6,8 +6,9 @@
 - [ ] Implement authenticated database CRUD and explicit duplicate-safe local import — blocked by database connection.
 - [ ] Implement private profile avatar uploads and profile preferences — blocked by database connection.
 - [x] Add persistent light/dark header toggle without replacing the existing design.
-- [ ] Stop generating fake records for new sessions and protect existing browser records from unreadable-data overwrites.
-- [ ] Verify browser data preservation, empty states, theme, and navigation; report database verification limitations.
+- [x] Stop generating fake records for new sessions and protect existing browser records from unreadable-data overwrites.
+- [x] Verify browser data preservation, empty states, theme, and navigation; report database verification limitations.
+- [ ] Remove initial theme flash and verify consistent appearance across completed modules — pending authenticated module completion and first-paint checks.
 - [ ] Complete persistent projects, financial summaries, invoices and invoice items — blocked by existing external connection and schema inspection.
 - [ ] Add database-backed Team management, explicit availability, assignments and worker photos — blocked by existing external connection and schema inspection.
 - [ ] Complete authenticated profile editing and private avatar persistence — blocked by existing external connection and authentication inspection.
